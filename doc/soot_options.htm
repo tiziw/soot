@@ -142,6 +142,8 @@
                            </a></li>
                      <li><a href="#phase_10_6">Purity Analysis [AM] (wjap.purity)
                            </a></li>
+                     <li><a href="#phase_10_7">Array Bound Checker (wjap.abc)
+                           </a></li>
                   </ul>
                </li>
                <li><a href="#phase_11">Shimple Control (shimple)
@@ -192,33 +194,31 @@
                            </a></li>
                      <li><a href="#phase_16_2">Null Pointer Colourer (jap.npcolorer)
                            </a></li>
-                     <li><a href="#phase_16_3">Array Bound Checker (jap.abc)
+                     <li><a href="#phase_16_3">Profiling Generator (jap.profiling)
                            </a></li>
-                     <li><a href="#phase_16_4">Profiling Generator (jap.profiling)
+                     <li><a href="#phase_16_4">Side Effect tagger (jap.sea)
                            </a></li>
-                     <li><a href="#phase_16_5">Side Effect tagger (jap.sea)
+                     <li><a href="#phase_16_5">Field Read/Write Tagger (jap.fieldrw)
                            </a></li>
-                     <li><a href="#phase_16_6">Field Read/Write Tagger (jap.fieldrw)
+                     <li><a href="#phase_16_6">Call Graph Tagger (jap.cgtagger)
                            </a></li>
-                     <li><a href="#phase_16_7">Call Graph Tagger (jap.cgtagger)
+                     <li><a href="#phase_16_7">Parity Tagger (jap.parity)
                            </a></li>
-                     <li><a href="#phase_16_8">Parity Tagger (jap.parity)
+                     <li><a href="#phase_16_8">Parameter Alias Tagger (jap.pat)
                            </a></li>
-                     <li><a href="#phase_16_9">Parameter Alias Tagger (jap.pat)
+                     <li><a href="#phase_16_9">Live Variables Tagger (jap.lvtagger)
                            </a></li>
-                     <li><a href="#phase_16_10">Live Variables Tagger (jap.lvtagger)
+                     <li><a href="#phase_16_10">Reaching Defs Tagger (jap.rdtagger)
                            </a></li>
-                     <li><a href="#phase_16_11">Reaching Defs Tagger (jap.rdtagger)
+                     <li><a href="#phase_16_11">Cast Elimination Check Tagger (jap.che)
                            </a></li>
-                     <li><a href="#phase_16_12">Cast Elimination Check Tagger (jap.che)
+                     <li><a href="#phase_16_12">Unreachable Method Transformer (jap.umt)
                            </a></li>
-                     <li><a href="#phase_16_13">Unreachable Method Transformer (jap.umt)
+                     <li><a href="#phase_16_13">Loop Invariant Tagger (jap.lit)
                            </a></li>
-                     <li><a href="#phase_16_14">Loop Invariant Tagger (jap.lit)
+                     <li><a href="#phase_16_14">Available Expressions Tagger (jap.aet)
                            </a></li>
-                     <li><a href="#phase_16_15">Available Expressions Tagger (jap.aet)
-                           </a></li>
-                     <li><a href="#phase_16_16">Dominators Tagger (jap.dmt)
+                     <li><a href="#phase_16_15">Dominators Tagger (jap.dmt)
                            </a></li>
                   </ul>
                </li>
@@ -917,12 +917,12 @@
             <td colspan="2">Emit purity attributes</td>
          </tr>
          <tr>
-            <td><tt>-annot-nullpointer </tt><br></td>
-            <td colspan="2">Emit null pointer attributes</td>
-         </tr>
-         <tr>
             <td><tt>-annot-arraybounds </tt><br></td>
             <td colspan="2">Emit array bounds check attributes</td>
+         </tr>
+         <tr>
+            <td><tt>-annot-nullpointer </tt><br></td>
+            <td colspan="2">Emit null pointer attributes</td>
          </tr>
          <tr>
             <td><tt>-annot-side-effect </tt><br></td>
@@ -5222,6 +5222,171 @@
             <p></p>
          </li>
       </ul>
+      <h2><a name="phase_10_7">Array Bound Checker (wjap.abc)
+            </a></h2>
+      <p>
+         
+         The Array Bound Checker performs a static analysis to determine
+         which array bounds checks may safely be eliminated and then annotates
+         statements with the results of the analysis.
+         
+         
+         If Soot is in whole-program mode, the Array Bound Checker can
+         use the results provided by the Rectangular Array Finder.
+         
+         
+      </p>
+      <h4>Accepted phase options:</h4>
+      <ul>
+         <li><b>Enabled</b>
+            (enabled)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p></p>
+         </li>
+         <li><b>With All</b>
+            (with-all)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               Setting the With All option to true is equivalent to setting each
+               of With CSE, With Array Ref, With Field Ref,
+               With Class Field, and With Rectangular Array to true.
+               
+               
+            </p>
+         </li>
+         <li><b>With Common Sub-expressions</b>
+            (with-cse)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               The analysis will consider common subexpressions. For example,
+               consider the situation where r1 is assigned
+               a*b; later, r2 is assigned a*b, where
+               neither a nor b have changed between the two
+               statements. The analysis can conclude that r2 has the
+               same value as r1. Experiments show that this option can
+               improve the result slightly.
+               
+               
+            </p>
+         </li>
+         <li><b>With Array References</b>
+            (with-arrayref)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               With this option enabled, array references can be considered as
+               common subexpressions; however, we are more conservative when
+               writing into an array, because array objects may be aliased. We
+               also assume that the application is single-threaded or that the
+               array references occur in a synchronized block. That is, we
+               assume that an array element may not be changed by other threads
+               between two array references.
+               
+               
+            </p>
+         </li>
+         <li><b>With Field References</b>
+            (with-fieldref)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               The analysis treats field references (static and instance) as
+               common subexpressions; however, we are more conservative when
+               writing to a field, because the base of the field reference may
+               be aliased. We also assume that the application is
+               single-threaded or that the field references occur in a
+               synchronized block. That is, we assume that a field may
+               not be changed by other threads between two field references.
+               
+               
+            </p>
+         </li>
+         <li><b>With Class Field</b>
+            (with-classfield)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               This option makes the analysis work on the class level. The
+               algorithm analyzes final or private class
+               fields first. It can recognize the fields that hold array objects
+               of constant length. In an application using lots of array
+               fields, this option can improve the analysis results
+               dramatically.
+               
+               
+            </p>
+         </li>
+         <li><b>With Rectangular Array</b>
+            (with-rectarray)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               This option is used together with wjap.ra to make Soot run the whole-program
+               analysis for rectangular array objects. This analysis is based on the
+               call graph, and it usually takes a long time. If the application uses
+               rectangular arrays, these options can improve the analysis
+               result.
+               
+            </p>
+         </li>
+         <li><b>Profiling</b>
+            (profiling)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>
+               
+               Profile the results of array bounds check analysis. The inserted
+               profiling code assumes the existence of a
+               MultiCounter
+               class implementing the methods invoked. For details, see the
+               ArrayBoundsChecker
+               source code.
+               
+               
+            </p>
+         </li>
+         <li><b>Add Color Tags</b>
+            (add-color-tags)
+            <br>
+            (default value:
+            <span class="value">false</span>
+            )
+            
+            <p>Add color tags to the results of the array bounds check analysis.</p>
+         </li>
+      </ul>
       <h2><a name="phase_11">Shimple Control (shimple)
             </a></h2>
       <p>
@@ -6071,172 +6236,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_3">Array Bound Checker (jap.abc)
-            </a></h2>
-      <p>
-         
-         The Array Bound Checker performs a static analysis to determine
-         which array bounds checks may safely be eliminated and then annotates
-         statements with the results of the analysis.
-         
-         
-         If Soot is in whole-program mode, the Array Bound Checker can
-         use the results provided by the Rectangular Array Finder.
-         
-         
-      </p>
-      <h4>Accepted phase options:</h4>
-      <ul>
-         <li><b>Enabled</b>
-            (enabled)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p></p>
-         </li>
-         <li><b>With All</b>
-            (with-all)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               Setting the With All option to true is equivalent to setting each
-               of With CSE, With Array Ref, With Field Ref,
-               With Class Field, and With Rectangular Array to true.
-               
-               
-            </p>
-         </li>
-         <li><b>With Common Sub-expressions</b>
-            (with-cse)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               The analysis will consider common subexpressions. For example,
-               consider the situation where r1 is assigned
-               a*b; later, r2 is assigned a*b, where
-               neither a nor b have changed between the two
-               statements. The analysis can conclude that r2 has the
-               same value as r1. Experiments show that this option can
-               improve the result slightly.
-               
-               
-            </p>
-         </li>
-         <li><b>With Array References</b>
-            (with-arrayref)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               With this option enabled, array references can be considered as
-               common subexpressions; however, we are more conservative when
-               writing into an array, because array objects may be aliased. We
-               also assume that the application is single-threaded or that the
-               array references occur in a synchronized block. That is, we
-               assume that an array element may not be changed by other threads
-               between two array references.
-               
-               
-            </p>
-         </li>
-         <li><b>With Field References</b>
-            (with-fieldref)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               The analysis treats field references (static and instance) as
-               common subexpressions; however, we are more conservative when
-               writing to a field, because the base of the field reference may
-               be aliased. We also assume that the application is
-               single-threaded or that the field references occur in a
-               synchronized block. That is, we assume that a field may
-               not be changed by other threads between two field references.
-               
-               
-            </p>
-         </li>
-         <li><b>With Class Field</b>
-            (with-classfield)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               This option makes the analysis work on the class level. The
-               algorithm analyzes final or private class
-               fields first. It can recognize the fields that hold array objects
-               of constant length. In an application using lots of array
-               fields, this option can improve the analysis results
-               dramatically.
-               
-               
-            </p>
-         </li>
-         <li><b>With Rectangular Array</b>
-            (with-rectarray)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               This option is used together with wjap.ra to make Soot run the whole-program
-               analysis for rectangular array objects. This analysis is based on the
-               call graph, and it usually takes a long time. If the application uses
-               rectangular arrays, these options can improve the analysis
-               result.
-               
-            </p>
-         </li>
-         <li><b>Profiling</b>
-            (profiling)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>
-               
-               Profile the results of array bounds check analysis. The inserted
-               profiling code assumes the existence of a
-               MultiCounter
-               class implementing the methods invoked. For details, see the
-               ArrayBoundsChecker
-               source code.
-               
-               
-            </p>
-         </li>
-         <li><b>Add Color Tags</b>
-            (add-color-tags)
-            <br>
-            (default value:
-            <span class="value">false</span>
-            )
-            
-            <p>Add color tags to the results of the array bounds check analysis.</p>
-         </li>
-      </ul>
-      <h2><a name="phase_16_4">Profiling Generator (jap.profiling)
+      <h2><a name="phase_16_3">Profiling Generator (jap.profiling)
             </a></h2>
       <p>
          
@@ -6280,7 +6280,7 @@
             </p>
          </li>
       </ul>
-      <h2><a name="phase_16_5">Side Effect tagger (jap.sea)
+      <h2><a name="phase_16_4">Side Effect tagger (jap.sea)
             </a></h2>
       <p>
          
@@ -6321,7 +6321,7 @@
             </p>
          </li>
       </ul>
-      <h2><a name="phase_16_6">Field Read/Write Tagger (jap.fieldrw)
+      <h2><a name="phase_16_5">Field Read/Write Tagger (jap.fieldrw)
             </a></h2>
       <p>
          
@@ -6356,7 +6356,7 @@
             </p>
          </li>
       </ul>
-      <h2><a name="phase_16_7">Call Graph Tagger (jap.cgtagger)
+      <h2><a name="phase_16_6">Call Graph Tagger (jap.cgtagger)
             </a></h2>
       <p>
          The Call Graph Tagger produces LinkTags based on the call
@@ -6378,7 +6378,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_8">Parity Tagger (jap.parity)
+      <h2><a name="phase_16_7">Parity Tagger (jap.parity)
             </a></h2>
       <p>
          The Parity Tagger produces StringTags and ColorTags indicating
@@ -6401,7 +6401,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_9">Parameter Alias Tagger (jap.pat)
+      <h2><a name="phase_16_8">Parameter Alias Tagger (jap.pat)
             </a></h2>
       <p>For each method with parameters of reference type, this tagger indicates the aliasing
          relationships between the parameters using colour tags. Parameters that may be aliased
@@ -6421,7 +6421,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_10">Live Variables Tagger (jap.lvtagger)
+      <h2><a name="phase_16_9">Live Variables Tagger (jap.lvtagger)
             </a></h2>
       <p>Colors live variables.</p>
       <h4>Accepted phase options:</h4>
@@ -6436,7 +6436,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_11">Reaching Defs Tagger (jap.rdtagger)
+      <h2><a name="phase_16_10">Reaching Defs Tagger (jap.rdtagger)
             </a></h2>
       <p>For each use of a local in a stmt creates a link to the reaching def.</p>
       <h4>Accepted phase options:</h4>
@@ -6451,7 +6451,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_12">Cast Elimination Check Tagger (jap.che)
+      <h2><a name="phase_16_11">Cast Elimination Check Tagger (jap.che)
             </a></h2>
       <p>Indicates whether cast checks can be eliminated.</p>
       <h4>Accepted phase options:</h4>
@@ -6466,7 +6466,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_13">Unreachable Method Transformer (jap.umt)
+      <h2><a name="phase_16_12">Unreachable Method Transformer (jap.umt)
             </a></h2>
       <p>When the whole-program analysis determines a method to be unreachable, this transformer
          inserts an assertion into the method to check that it is indeed unreachable.
@@ -6484,7 +6484,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_14">Loop Invariant Tagger (jap.lit)
+      <h2><a name="phase_16_13">Loop Invariant Tagger (jap.lit)
             </a></h2>
       <p>An expression whose operands are constant or have reaching definitions from outside
          the
@@ -6503,7 +6503,7 @@
             <p></p>
          </li>
       </ul>
-      <h2><a name="phase_16_15">Available Expressions Tagger (jap.aet)
+      <h2><a name="phase_16_14">Available Expressions Tagger (jap.aet)
             </a></h2>
       <p>A each statement a set of available expressions is after the statement is added as
          a
@@ -6545,7 +6545,7 @@
             </table>
          </li>
       </ul>
-      <h2><a name="phase_16_16">Dominators Tagger (jap.dmt)
+      <h2><a name="phase_16_15">Dominators Tagger (jap.dmt)
             </a></h2>
       <p>Provides link tags at a statement to all of the satements dominators.</p>
       <h4>Accepted phase options:</h4>
